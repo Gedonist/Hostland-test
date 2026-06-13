@@ -1,0 +1,15 @@
+# Dependencies
+/vendor/
+
+# Environment — never commit real credentials
+.env
+
+# Composer lock is committed so production installs are reproducible
+# composer.lock
+
+# OS / editor artefacts
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

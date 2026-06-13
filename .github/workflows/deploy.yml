@@ -1,0 +1,108 @@
+name: Deploy to Shared Hosting (Hostland) via SFTP
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # ─── 1. Checkout source code ───────────────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ─── 2. Set up PHP runtime ─────────────────────────────────────────────
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo, pdo_mysql, mysqli
+          coverage: none
+
+      # ─── 3. Cache Composer packages ────────────────────────────────────────
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      # ─── 4. Install PHP dependencies ───────────────────────────────────────
+      - name: Install Composer dependencies
+        run: composer install --no-dev --optimize-autoloader --prefer-dist
+
+      # ─── 5. Deploy files to shared hosting via SFTP ────────────────────────
+      #
+      # Required repository secrets:
+      #   SFTP_HOST        — hostname of the shared hosting server
+      #   SFTP_PORT        — SFTP port (usually 22)
+      #   SFTP_USER        — SFTP username
+      #   SFTP_PASS        — SFTP password
+      #   SFTP_REMOTE_PATH — absolute path on the server (e.g. /home/user/public_html)
+      #
+      - name: Deploy via SFTP (lftp)
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_PORT: ${{ secrets.SFTP_PORT }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          SFTP_PASS: ${{ secrets.SFTP_PASS }}
+          SFTP_REMOTE_PATH: ${{ secrets.SFTP_REMOTE_PATH }}
+        run: |
+          sudo apt-get install -y lftp
+
+          # Mirror the project root to the remote path.
+          # --reverse   : upload local → remote
+          # --delete    : remove files on remote that no longer exist locally
+          # --parallel=4: upload 4 files at once for speed
+          lftp -c "
+            set sftp:auto-confirm yes;
+            set net:max-retries 3;
+            set net:reconnect-interval-base 5;
+            open sftp://${SFTP_USER}:${SFTP_PASS}@${SFTP_HOST}:${SFTP_PORT:-22};
+            mirror --reverse --delete --verbose --parallel=4 \
+              --exclude-glob .git/ \
+              --exclude-glob .github/ \
+              --exclude-glob .gitignore \
+              --exclude-glob .env \
+              --exclude-glob .env.example \
+              --exclude-glob README.md \
+              ./ ${SFTP_REMOTE_PATH};
+            bye
+          "
+
+      # ─── 6. Run SQL migrations via SSH ─────────────────────────────────────
+      #
+      # Additional required secrets:
+      #   SSH_HOST     — hostname (often same as SFTP_HOST)
+      #   SSH_PORT     — SSH port (usually 22)
+      #   SSH_USER     — SSH username
+      #   SSH_PASS     — SSH password (or use SSH_PRIVATE_KEY below)
+      #   DB_HOST      — MySQL host (usually 'localhost' on shared hosting)
+      #   DB_PORT      — MySQL port (usually 3306)
+      #   DB_NAME      — Database name
+      #   DB_USER      — Database user
+      #   DB_PASS      — Database password
+      #
+      - name: Run database migrations via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASS }}
+          script: |
+            cd "${{ secrets.SFTP_REMOTE_PATH }}"
+            DB_PORT="${{ secrets.DB_PORT }}"
+            mysql \
+              -h "${{ secrets.DB_HOST }}" \
+              -P "${DB_PORT:-3306}" \
+              -u "${{ secrets.DB_USER }}" \
+              -p"${{ secrets.DB_PASS }}" \
+              "${{ secrets.DB_NAME }}" \
+              < sql/migrations.sql
+            echo "Migration completed successfully"
