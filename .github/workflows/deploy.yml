@@ -34,16 +34,53 @@ jobs:
           DB_PASS=${{ secrets.DB_PASS }}
           EOF
 
-      # Деплой по SFTP (выберите удобный action)
+      # Деплой по SFTP
       - name: Deploy via SFTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5   # очень популярный
-        with:
-          server: ${{ secrets.FTP_URL }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASS }}
-          local-dir: ./
-          server-dir: ./public_html/          # или куда нужно на хостинге
-          # exclude: |
-          #   .git/
-          #   .github/
-          #   README.md
+        env:
+          FTP_URL: ${{ secrets.FTP_URL }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lftp
+
+          server="$FTP_URL"
+          if [[ "$server" != sftp://* ]]; then
+            server="sftp://$server"
+          fi
+
+          host="${server#sftp://}"
+          host="${host%%/*}"
+          host_only="${host%%:*}"
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          host_key="$(ssh-keyscan -H "$host_only")" || {
+            echo "ssh-keyscan failed for $host_only"
+            exit 1
+          }
+          [[ -n "$host_key" ]] || {
+            echo "ssh-keyscan returned no host key for $host_only"
+            exit 1
+          }
+          printf '%s\n' "$host_key" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+          trap 'rm -f ~/.netrc' EXIT
+          cat > ~/.netrc <<EOF
+          machine $host_only
+          login $FTP_USER
+          password $FTP_PASS
+          EOF
+          chmod 600 ~/.netrc
+
+          lftp "$server" <<EOF
+          set cmd:fail-exit yes
+          set net:netrc yes
+          mirror -R \
+            --exclude-glob .git/ \
+            --exclude-glob .github/ \
+            --exclude README.md \
+            ./ ./public_html/
+          bye
+          EOF
