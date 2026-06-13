@@ -18,9 +18,9 @@ jobs:
           cat > config.php << EOF
           <?php
           define('DB_HOST', 'localhost');
-          define('DB_NAME', '${{ secrets.USER }}');
-          define('DB_USER', '${{ secrets.USER }}');
-          define('DB_PASS', '${{ secrets.DB_PASSWORD }}');
+          define('DB_NAME', '${{ secrets.FTP_USER }}');
+          define('DB_USER', '${{ secrets.FTP_USER }}');
+          define('DB_PASS', '${{ secrets.DB_PASS }}');
           ?>
           EOF
 
@@ -29,8 +29,8 @@ jobs:
         run: |
           cat > .env << EOF
           DB_HOST=localhost
-          DB_NAME=${{ secrets.USER }}
-          DB_USER=${{ secrets.USER }}
+          DB_NAME=${{ secrets.FTP_USER }}
+          DB_USER=${{ secrets.FTP_USER }}
           DB_PASS=${{ secrets.DB_PASS }}
           EOF
 
