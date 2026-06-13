@@ -49,12 +49,14 @@ jobs:
             server="sftp://$server"
           fi
 
-          lftp -u "$FTP_USER","$FTP_PASS" "$server" -e "
-            set sftp:auto-confirm yes
-            mirror -R --delete \
-              --exclude-glob .git* \
-              --exclude-glob .github* \
-              --exclude README.md \
-              ./ ./public_html/
-            bye
-          "
+          lftp "$server" <<EOF
+          set cmd:fail-exit yes
+          set sftp:auto-confirm yes
+          user "$FTP_USER" "$FTP_PASS"
+          mirror -R \
+            --exclude-glob .git* \
+            --exclude-glob .github* \
+            --exclude README.md \
+            ./ ./public_html/
+          bye
+          EOF
