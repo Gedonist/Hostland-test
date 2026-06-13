@@ -55,7 +55,15 @@ jobs:
 
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          ssh-keyscan -H "$host_only" >> ~/.ssh/known_hosts
+          host_key="$(ssh-keyscan -H "$host_only" 2>/tmp/ssh-keyscan.err)" || {
+            cat /tmp/ssh-keyscan.err
+            exit 1
+          }
+          [[ -n "$host_key" ]] || {
+            echo "ssh-keyscan returned no host key for $host_only"
+            exit 1
+          }
+          printf '%s\n' "$host_key" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
           cat > ~/.netrc <<EOF
@@ -75,4 +83,3 @@ jobs:
             ./ ./public_html/
           bye
           EOF
-          [[ $? -eq 0 ]] || exit 1
