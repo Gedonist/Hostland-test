@@ -75,3 +75,4 @@ jobs:
             ./ ./public_html/
           bye
           EOF
+          [[ $? -eq 0 ]] || exit 1
