@@ -55,7 +55,7 @@ jobs:
 
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          host_key="$(ssh-keyscan -H "$host_only" 2>/dev/null)" || {
+          host_key="$(ssh-keyscan -H "$host_only")" || {
             echo "ssh-keyscan failed for $host_only"
             exit 1
           }
@@ -66,6 +66,7 @@ jobs:
           printf '%s\n' "$host_key" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
+          trap 'rm -f ~/.netrc' EXIT
           cat > ~/.netrc <<EOF
           machine $host_only
           login $FTP_USER
