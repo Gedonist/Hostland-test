@@ -38,9 +38,9 @@ jobs:
       - name: Deploy via SFTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5   # очень популярный
         with:
-          server: ${{ secrets.HOSTNAME }}
-          username: ${{ secrets.USER }}
-          password: ${{ secrets.PASSWORD }}
+          server: ${{ secrets.FTP_URL }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
           local-dir: ./
           server-dir: ./public_html/          # или куда нужно на хостинге
           # exclude: |
