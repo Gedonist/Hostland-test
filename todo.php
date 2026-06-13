@@ -2,9 +2,9 @@
 // TODO лист с записью и чтением из MySQL
 
 // Берём из переменных окружения (устанавливаются на сервере или в .env)
-$host     = getenv('DB_HOST')     ?: 'localhost';
-$db       = getenv('DB_NAME')     ?: 'USER';
-$user     = getenv('DB_USER')     ?: 'USER';
+$host     = 'localhost';
+$db       = getenv('FTP_USER')     ?: 'USER';
+$user     = getenv('FTP_USER')     ?: 'USER';
 $pass     = getenv('DB_PASS')     ?: 'DB_PASS';   // ← это будет секрет
 $charset  = 'utf8mb4';
 
