@@ -49,13 +49,28 @@ jobs:
             server="sftp://$server"
           fi
 
+          host="${server#sftp://}"
+          host="${host%%/*}"
+          host_only="${host%%:*}"
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan -H "$host_only" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+          cat > ~/.netrc <<EOF
+          machine $host_only
+          login $FTP_USER
+          password $FTP_PASS
+          EOF
+          chmod 600 ~/.netrc
+
           lftp "$server" <<EOF
           set cmd:fail-exit yes
-          set sftp:auto-confirm yes
-          user "$FTP_USER" "$FTP_PASS"
+          set net:netrc yes
           mirror -R \
-            --exclude-glob .git* \
-            --exclude-glob .github* \
+            --exclude-glob .git/ \
+            --exclude-glob .github/ \
             --exclude README.md \
             ./ ./public_html/
           bye
