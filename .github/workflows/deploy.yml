@@ -1,0 +1,49 @@
+name: Deploy to Hosting
+
+on:
+  push:
+    branches: [ main ]   # или master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # === Подготовка config-файла с секретами ===
+      - name: Create config.php with secrets
+        run: |
+          cat > config.php << EOF
+          <?php
+          define('DB_HOST', 'localhost');
+          define('DB_NAME', '${{ secrets.USER }}');
+          define('DB_USER', '${{ secrets.USER }}');
+          define('DB_PASS', '${{ secrets.DB_PASSWORD }}');
+          ?>
+          EOF
+
+      # Если хотите использовать getenv() — можно создать .env файл
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          DB_HOST=localhost
+          DB_NAME=${{ secrets.USER }}
+          DB_USER=${{ secrets.USER }}
+          DB_PASS=${{ secrets.DB_PASS }}
+          EOF
+
+      # Деплой по SFTP (выберите удобный action)
+      - name: Deploy via SFTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5   # очень популярный
+        with:
+          server: ${{ secrets.HOSTNAME }}
+          username: ${{ secrets.USER }}
+          password: ${{ secrets.PASSWORD }}
+          local-dir: ./
+          server-dir: ./public_html/          # или куда нужно на хостинге
+          # exclude: |
+          #   .git/
+          #   .github/
+          #   README.md
