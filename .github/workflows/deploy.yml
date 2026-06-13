@@ -55,8 +55,8 @@ jobs:
 
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          host_key="$(ssh-keyscan -H "$host_only" 2>/tmp/ssh-keyscan.err)" || {
-            cat /tmp/ssh-keyscan.err
+          host_key="$(ssh-keyscan -H "$host_only" 2>/dev/null)" || {
+            echo "ssh-keyscan failed for $host_only"
             exit 1
           }
           [[ -n "$host_key" ]] || {
