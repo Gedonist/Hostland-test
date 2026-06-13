@@ -34,16 +34,27 @@ jobs:
           DB_PASS=${{ secrets.DB_PASS }}
           EOF
 
-      # Деплой по SFTP (выберите удобный action)
+      # Деплой по SFTP
       - name: Deploy via SFTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5   # очень популярный
-        with:
-          server: ${{ secrets.FTP_URL }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASS }}
-          local-dir: ./
-          server-dir: ./public_html/          # или куда нужно на хостинге
-          # exclude: |
-          #   .git/
-          #   .github/
-          #   README.md
+        env:
+          FTP_URL: ${{ secrets.FTP_URL }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lftp
+
+          server="$FTP_URL"
+          if [[ "$server" != sftp://* ]]; then
+            server="sftp://$server"
+          fi
+
+          lftp -u "$FTP_USER","$FTP_PASS" "$server" -e "
+            set sftp:auto-confirm yes
+            mirror -R --delete \
+              --exclude-glob .git* \
+              --exclude-glob .github* \
+              --exclude README.md \
+              ./ ./public_html/
+            bye
+          "
