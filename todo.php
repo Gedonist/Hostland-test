@@ -32,7 +32,17 @@ $pass     = configValue('DB_PASS');
 $charset  = 'utf8mb4';
 
 if ($db === null || $user === null || $pass === null) {
-    throw new RuntimeException("Ошибка конфигурации БД: задайте DB_NAME, DB_USER и DB_PASS в config.php или переменных окружения.");
+    $missing = [];
+    if ($db === null) {
+        $missing[] = 'DB_NAME';
+    }
+    if ($user === null) {
+        $missing[] = 'DB_USER';
+    }
+    if ($pass === null) {
+        $missing[] = 'DB_PASS';
+    }
+    throw new RuntimeException("Отсутствуют обязательные параметры конфигурации: " . implode(', ', $missing));
 }
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
@@ -77,9 +87,11 @@ try {
     }
     
 } catch (RuntimeException $e) {
-    die($e->getMessage());
+    error_log($e->getMessage());
+    die("Ошибка конфигурации БД.");
 } catch (PDOException $e) {
-    die("Ошибка подключения к БД: " . $e->getMessage());
+    error_log($e->getMessage());
+    die("Ошибка подключения к БД.");
 }
 ?>
 <!DOCTYPE html><html lang="ru">
