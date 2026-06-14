@@ -3,8 +3,8 @@
 
 // Берём из переменных окружения (устанавливаются на сервере или в .env)
 $host     = 'localhost';
-$db       = getenv('DB_NAME')     ?: 'USER';
-$user     = getenv('DB_USER')     ?: 'USER';
+$db       = getenv('DB_NAME')     ?: 'DB_NAME';
+$user     = getenv('DB_USER')     ?: 'DB_USER';
 $pass     = getenv('DB_PASS')     ?: 'DB_PASS';   // ← это будет секрет
 $charset  = 'utf8mb4';
 
