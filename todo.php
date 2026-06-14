@@ -3,8 +3,8 @@
 
 // Берём из переменных окружения (устанавливаются на сервере или в .env)
 $host     = 'localhost';
-$db       = getenv('FTP_USER')     ?: 'USER';
-$user     = getenv('FTP_USER')     ?: 'USER';
+$db       = getenv('DB_NAME')     ?: 'USER';
+$user     = getenv('DB_USER')     ?: 'USER';
 $pass     = getenv('DB_PASS')     ?: 'DB_PASS';   // ← это будет секрет
 $charset  = 'utf8mb4';
 
