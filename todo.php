@@ -32,7 +32,7 @@ $pass     = configValue('DB_PASS');
 $charset  = 'utf8mb4';
 
 if ($db === null || $user === null || $pass === null) {
-    die("Ошибка конфигурации БД: задайте DB_NAME, DB_USER и DB_PASS в config.php или переменных окружения.");
+    throw new RuntimeException("Ошибка конфигурации БД: задайте DB_NAME, DB_USER и DB_PASS в config.php или переменных окружения.");
 }
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
@@ -76,6 +76,8 @@ try {
         exit;
     }
     
+} catch (RuntimeException $e) {
+    die($e->getMessage());
 } catch (PDOException $e) {
     die("Ошибка подключения к БД: " . $e->getMessage());
 }
