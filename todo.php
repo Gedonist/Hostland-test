@@ -9,8 +9,11 @@ function configValue(string $key, ?string $default = null): ?string
 {
     if (defined($key)) {
         $value = constant($key);
-        if (is_string($value) && $value !== '') {
-            return $value;
+        if (is_scalar($value)) {
+            $value = (string) $value;
+            if ($value !== '') {
+                return $value;
+            }
         }
     }
 
