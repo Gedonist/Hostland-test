@@ -1,12 +1,36 @@
 <?php
 // TODO лист с записью и чтением из MySQL
 
-// Берём из переменных окружения (устанавливаются на сервере или в .env)
-$host     = 'localhost';
-$db       = getenv('DB_NAME')     ?: 'DB_NAME';
-$user     = getenv('DB_USER')     ?: 'DB_USER';
-$pass     = getenv('DB_PASS')     ?: 'DB_PASS';   // ← это будет секрет
+if (is_file(__DIR__ . '/config.php')) {
+    require_once __DIR__ . '/config.php';
+}
+
+function configValue(string $key, ?string $default = null): ?string
+{
+    if (defined($key)) {
+        $value = constant($key);
+        if (is_string($value) && $value !== '') {
+            return $value;
+        }
+    }
+
+    $value = getenv($key);
+    if ($value !== false && $value !== '') {
+        return $value;
+    }
+
+    return $default;
+}
+
+$host     = configValue('DB_HOST', 'localhost');
+$db       = configValue('DB_NAME');
+$user     = configValue('DB_USER');
+$pass     = configValue('DB_PASS');
 $charset  = 'utf8mb4';
+
+if ($db === null || $user === null || $pass === null) {
+    die("Ошибка конфигурации БД: задайте DB_NAME, DB_USER и DB_PASS в config.php или переменных окружения.");
+}
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
 $options = [
@@ -105,4 +129,3 @@ try {
     <?php endforeach; ?>
 </ul></body>
 </html>
-
